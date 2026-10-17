@@ -1,0 +1,14 @@
+# Local PostgreSQL for development and tests.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: playground
+      POSTGRES_PASSWORD: playground
+      POSTGRES_DB: playground
+    ports:
+      - '127.0.0.1:5442:5432'
+    volumes:
+      - postgres:/var/lib/postgresql
+volumes:
+  postgres:

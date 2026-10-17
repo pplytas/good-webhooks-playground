@@ -1,69 +1,89 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { Suspense } from 'react'
+import { SignInButton } from '@/components/sign-in-button'
+import { Button } from '@/components/ui/button'
+import { MAX_ENDPOINTS_PER_USER, MAX_PINGS_PER_HOUR } from '@/server/limits'
+import { getSession } from '@/server/session'
+
+async function CallToAction() {
+  const session = await getSession()
+  if (!session) return <SignInButton size="lg" />
+  return (
+    <Button size="lg" nativeButton={false} render={<Link href="/endpoints" />}>
+      Open your endpoints
+    </Button>
+  )
+}
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex flex-col gap-14">
+      <section className="flex max-w-2xl flex-col gap-5">
+        <h1 className="text-4xl font-semibold">Send real webhooks to your receiver</h1>
+        <p className="text-lg text-muted-foreground">
+          Sign in with GitHub, add an HTTPS endpoint, and receive signed Standard Webhooks from a
+          running good-webhooks worker: <code className="font-mono">clock.ticked</code> every 5
+          minutes, and <code className="font-mono">ping.requested</code> whenever you ask.
+        </p>
+        <div>
+          <Suspense fallback={<div className="h-10" />}>
+            <CallToAction />
+          </Suspense>
+        </div>
+      </section>
+
+      <section className="grid gap-8 sm:grid-cols-2">
+        <div className="flex flex-col gap-3">
+          <h2 className="text-xl font-semibold">What to try</h2>
+          <ul className="flex list-disc flex-col gap-2 pl-5 text-muted-foreground">
+            <li>
+              Verify each request with{' '}
+              <a
+                className="underline underline-offset-4"
+                href="https://good-webhooks.dev/docs/guides/receive"
+              >
+                parseWebhook()
+              </a>{' '}
+              and the endpoint&apos;s secret.
+            </li>
+            <li>Answer 500, or 429 with Retry-After, and watch the retries in the delivery log.</li>
+            <li>Answer 410, and the worker pauses the endpoint. Resume it when you are ready.</li>
+            <li>Replay a finished delivery, or rotate the secret while events keep arriving.</li>
+          </ul>
+        </div>
+        <div className="flex flex-col gap-3">
+          <h2 className="text-xl font-semibold">No receiver yet?</h2>
+          <p className="text-muted-foreground">
+            A request inbox shows what arrives, though it does not check signatures:{' '}
+            <a className="underline underline-offset-4" href="https://webhook.site">
+              webhook.site
+            </a>
+            ,{' '}
+            <a className="underline underline-offset-4" href="https://www.svix.com/play/">
+              Svix Play
+            </a>
+            , or{' '}
+            <a className="underline underline-offset-4" href="https://console.hookdeck.com">
+              Hookdeck Console
+            </a>
+            .
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </section>
+
+      <section id="privacy" className="flex max-w-2xl flex-col gap-3">
+        <h2 className="text-xl font-semibold">Privacy and fair use</h2>
+        <p className="text-muted-foreground">
+          We keep what GitHub shares at sign-in (name, email, avatar), your endpoints, and 7 days of
+          delivery history, including the first 4 KB of each response. Deleting your account removes
+          your endpoints at once; their delivery history expires within 7 days.
+        </p>
+        <p className="text-muted-foreground">
+          Each account gets {MAX_ENDPOINTS_PER_USER} endpoints and {MAX_PINGS_PER_HOUR} pings an
+          hour. Only point endpoints at URLs you control. Accounts that send to someone else&apos;s
+          URL are blocked.
+        </p>
+      </section>
     </div>
-  );
+  )
 }

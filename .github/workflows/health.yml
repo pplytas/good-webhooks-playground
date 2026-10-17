@@ -1,0 +1,17 @@
+name: Health
+
+# A failing run emails the repository owner through GitHub's normal notifications.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Worker and canary reported in the last 15 minutes
+        run: curl --fail-with-body --silent --show-error --max-time 20 https://playground.good-webhooks.dev/api/health
