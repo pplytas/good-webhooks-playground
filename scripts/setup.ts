@@ -1,10 +1,10 @@
-// Runs before each deploy: Better Auth schema, then SQL migrations, then the canary endpoint.
+// Runs before each deploy: Better Auth schema, then SQL migrations, then the receiver endpoints.
 import { getMigrations } from 'better-auth/db/migration'
 import { auth } from '../src/server/auth.ts'
-import { ensureCanary } from '../src/server/canary.ts'
 import { pool } from '../src/server/db.ts'
 import { createPlaygroundDelivery } from '../src/server/delivery.ts'
 import { applyMigrations } from '../src/server/migrate.ts'
+import { ensureReceivers } from '../src/server/receivers.ts'
 
 try {
   const { toBeCreated, toBeAdded, runMigrations } = await getMigrations(auth().options)
@@ -18,7 +18,7 @@ try {
   )
   console.log(JSON.stringify({ event: 'setup.sql', applied: await applyMigrations(pool()) }))
   await (await createPlaygroundDelivery()).check()
-  console.log(JSON.stringify({ event: 'setup.canary', result: await ensureCanary() }))
+  console.log(JSON.stringify({ event: 'setup.receivers', created: await ensureReceivers() }))
 } finally {
   await pool().end()
 }

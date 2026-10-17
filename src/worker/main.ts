@@ -1,9 +1,10 @@
-// The worker process: sends deliveries, publishes ticks, records liveness, and prunes history.
+// The worker process: sends deliveries, publishes ticks, records liveness, prunes history, and resumes chaos receivers.
 import { hostname } from 'node:os'
 import { createBetterAuthManagement } from 'good-webhooks/better-auth'
 import { auth } from '../server/auth.ts'
 import { pool } from '../server/db.ts'
 import { createPlaygroundDelivery } from '../server/delivery.ts'
+import { resumePausedReceivers } from '../server/receivers.ts'
 import { publishTicks, tickWindow } from './ticks.ts'
 
 const LOOP_MS = 10_000
@@ -47,9 +48,11 @@ async function prune(delivery: Awaited<ReturnType<typeof createPlaygroundDeliver
   await database.query("DELETE FROM playground_ping WHERE created_at < now() - interval '1 day'")
   await database.query("DELETE FROM playground_worker WHERE seen_at < now() - interval '1 day'")
   log('playground.pruned', { events: deleted })
+  const resumed = await resumePausedReceivers()
+  if (resumed.length) log('playground.receivers.resumed', { receivers: resumed })
 }
 
-/** Ticks, liveness, and pruning run beside the delivery loop and stop with it. */
+/** Ticks, liveness, pruning, and receiver resumes run beside the delivery loop and stop with it. */
 async function housekeeping(delivery: Awaited<ReturnType<typeof createPlaygroundDelivery>>) {
   const source = (await createBetterAuthManagement(auth())).source
   let lastWindow = 0

@@ -16,6 +16,10 @@ _Avoid_: Test event (good-webhooks reserves that for a single-endpoint check tha
 The Playground's own receiver, registered as an application-scope endpoint. It verifies every event it receives, so its last receipt shows that sending works end to end.
 _Avoid_: Health check, monitor
 
+**Chaos receiver**:
+One of the Playground's own application-scope endpoints that fails on purpose, sometimes or always, so retries, timeouts, Retry-After, and automatic pauses keep happening without visitors. It verifies every request first.
+_Avoid_: Test endpoint, broken endpoint
+
 **Owner**:
 A signed-in GitHub user and the personal scope their endpoints belong to.
 _Avoid_: Customer, tenant

@@ -38,7 +38,7 @@ test('a tick reaches each subscribed user once per window, and skips users witho
   }
   const window = new Date('2026-10-17T10:00:00.000Z')
 
-  // Application scope (no canary in this database) plus the one subscribed user.
+  // Application scope (no receivers in this database) plus the one subscribed user.
   expect(await publishTicks(input, window)).toEqual({ scopes: 2, deliveries: 1 })
   // The same window again: the idempotency key accepts it as a duplicate.
   expect(await publishTicks(input, window)).toEqual({ scopes: 2, deliveries: 1 })
