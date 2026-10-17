@@ -21,7 +21,7 @@ export default defineRailway(() => {
     preDeploy: 'pnpm setup',
     start: 'pnpm start',
     healthcheck: '/',
-    domains: ['playground.good-webhooks.dev'],
+    // playground.good-webhooks.dev is attached with `railway domain`; IaC cannot register it.
     env,
   })
 
