@@ -60,6 +60,7 @@ export interface ReceiverStatus {
   pauseReason: string | null
   deliveries: Record<string, number>
   attempts: Record<string, number>
+  lastError: { at: Date; error: string } | null
 }
 
 const forEndpoint = (rows: { endpoint_id: string; status: string; count: number }[], id: string) =>
@@ -70,7 +71,7 @@ export async function readReceivers(): Promise<ReceiverStatus[]> {
   const list = await receiverEndpoints()
   const ids = list.map((item) => item.endpointId)
   const database = pool()
-  const [management, deliveries, attempts] = await Promise.all([
+  const [management, deliveries, attempts, errors] = await Promise.all([
     createBetterAuthManagement(auth()),
     database.query<{ endpoint_id: string; status: string; count: number }>(
       `SELECT endpoint_id, status, count(*)::int AS count FROM webhook_deliveries
@@ -85,10 +86,18 @@ export async function readReceivers(): Promise<ReceiverStatus[]> {
        GROUP BY d.endpoint_id, a.outcome`,
       [ids],
     ),
+    database.query<{ endpoint_id: string; started_at: Date; error: string }>(
+      `SELECT DISTINCT ON (d.endpoint_id) d.endpoint_id, a.started_at, a.error
+       FROM webhook_attempts a JOIN webhook_deliveries d ON d.id = a.delivery_id
+       WHERE d.endpoint_id = ANY($1) AND a.error IS NOT NULL
+       ORDER BY d.endpoint_id, a.started_at DESC`,
+      [ids],
+    ),
   ])
   return Promise.all(
     list.map(async ({ name, endpointId }) => {
       const endpoint = await management.get(null, endpointId)
+      const failure = errors.rows.find((row) => row.endpoint_id === endpointId)
       return {
         name,
         description: receivers[name].description,
@@ -96,6 +105,7 @@ export async function readReceivers(): Promise<ReceiverStatus[]> {
         pauseReason: endpoint.pauseReason ?? null,
         deliveries: forEndpoint(deliveries.rows, endpointId),
         attempts: forEndpoint(attempts.rows, endpointId),
+        lastError: failure ? { at: failure.started_at, error: failure.error } : null,
       }
     }),
   )

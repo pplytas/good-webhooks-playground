@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatAge } from '@/lib/format'
+import { formatAge, formatTime } from '@/lib/format'
 import { readReceivers, readStatus } from '@/server/status'
 
 export const metadata: Metadata = { title: 'Status' }
@@ -81,6 +81,7 @@ async function Receivers() {
             <TableHead>State</TableHead>
             <TableHead>Deliveries, 24 h</TableHead>
             <TableHead>Attempts, 24 h</TableHead>
+            <TableHead>Latest error</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -103,6 +104,9 @@ async function Receivers() {
               <TableCell className="text-sm">
                 {count(row.attempts, 'succeeded')} ok, {count(row.attempts, 'retry')} retried,{' '}
                 {count(row.attempts, 'failed')} failed
+              </TableCell>
+              <TableCell className="max-w-64 text-sm whitespace-normal text-muted-foreground">
+                {row.lastError ? `${row.lastError.error} (${formatTime(row.lastError.at)})` : '–'}
               </TableCell>
             </TableRow>
           ))}
