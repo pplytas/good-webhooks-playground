@@ -41,3 +41,18 @@ test('a user can send 10 pings an hour', async () => {
   // An hour after the first ping, one slot opens.
   expect(await requestPing(user.id, at(60.5))).toEqual({ limited: false, deliveryCount: 1 })
 })
+
+test('the owner can send a test event, which reports the receiver failure', async () => {
+  const { auth } = await import('../src/server/auth.ts')
+  const { headers } = await createGithubUser()
+  const { endpoint } = await auth().api.createWebhookEndpoint({
+    headers,
+    body: { url: 'https://receiver.example/test', eventTypes: ['ping.requested'] },
+  })
+  // .example never resolves, so the result reports a DNS failure instead of throwing.
+  const result = await auth().api.sendWebhookEndpointTestEvent({
+    headers,
+    body: { id: endpoint.id },
+  })
+  expect(result).toMatchObject({ ok: false, responseStatus: null, error: 'dns_error' })
+})
