@@ -20,7 +20,11 @@ function createAuth() {
     user: { deleteUser: { enabled: true } },
     rateLimit: {
       storage: 'database',
-      customRules: { '/good-webhooks/*': { window: 60, max: 30 } },
+      // The first matching key wins, and custom rules replace the plugin's own limits.
+      customRules: {
+        '/good-webhooks/send-test-event': { window: 60, max: 10 },
+        '/good-webhooks/*': { window: 60, max: 30 },
+      },
     },
     advanced: {
       // Railway's edge sets X-Real-IP to the client address; clients cannot supply it.
