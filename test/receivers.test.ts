@@ -9,12 +9,20 @@ beforeAll(async () => {
 afterAll(() => teardown())
 
 /** Sign like a Standard Webhooks sender: HMAC-SHA256 over "id.timestamp.body". */
-function signedRequest(url: string, secret: string, id = randomUUID()) {
+function signedRequest(
+  url: string,
+  secret: string,
+  id = randomUUID(),
+  event: { type: string; data: unknown } = {
+    type: 'clock.ticked',
+    data: { tickedAt: '2026-10-17T10:00:00.000Z', intervalSeconds: 300 },
+  },
+) {
   const body = JSON.stringify({
     id,
-    type: 'clock.ticked',
+    type: event.type,
     occurredAt: new Date().toISOString(),
-    data: { tickedAt: '2026-10-17T10:00:00.000Z', intervalSeconds: 300 },
+    data: event.data,
   })
   const timestamp = Math.floor(Date.now() / 1000)
   const key = Buffer.from(secret.replace(/^whsec_/, ''), 'base64')
@@ -86,4 +94,31 @@ test('paused gone and failing receivers are resumed after a day, others are left
   expect(await resumePausedReceivers(Date.now() + 25 * 60 * 60 * 1000)).toEqual(['gone'])
   expect((await management.get(null, ids.gone!)).status).toBe('active')
   expect((await management.get(null, ids.flaky!)).status).toBe('paused')
+})
+
+test('every receiver acknowledges a test event without acting on it', async () => {
+  const { pool } = await import('../src/server/db.ts')
+  const { receiverSecret } = await import('../src/server/receivers.ts')
+  const canary = await import('../src/app/api/canary/route.ts')
+  const chaos = await import('../src/app/api/receivers/[mode]/route.ts')
+  const testEvent = { type: 'good-webhooks.test', data: { endpointId: 'endpoint_1' } }
+  const id = randomUUID()
+  const url = 'http://localhost:3000/api/canary'
+  expect(
+    (await canary.POST(signedRequest(url, (await receiverSecret('canary'))!, id, testEvent)))
+      .status,
+  ).toBe(204)
+  const { rows } = await pool().query<{ count: number }>(
+    'SELECT count(*)::int AS count FROM playground_canary_receipt WHERE event_id = $1',
+    [id],
+  )
+  expect(rows[0]?.count).toBe(0)
+  const request = signedRequest(
+    'http://localhost:3000/api/receivers/failing',
+    (await receiverSecret('failing'))!,
+    randomUUID(),
+    testEvent,
+  )
+  const params = Promise.resolve({ mode: 'failing' })
+  expect((await chaos.POST(request, { params })).status).toBe(204)
 })
