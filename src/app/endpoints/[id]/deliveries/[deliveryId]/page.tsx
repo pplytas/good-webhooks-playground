@@ -48,6 +48,8 @@ async function Delivery({ params }: PageProps<'/endpoints/[id]/deliveries/[deliv
           <DeliveryStatusBadge status={detail.status} />
         </div>
         <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[max-content_1fr]">
+          <dt className="text-muted-foreground">Event</dt>
+          <dd className="font-mono">{detail.eventType}</dd>
           <dt className="text-muted-foreground">Event ID</dt>
           <dd className="font-mono">{detail.eventId}</dd>
           <dt className="text-muted-foreground">Created</dt>

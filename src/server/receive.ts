@@ -1,13 +1,14 @@
-import { parseWebhook, WebhookError } from 'good-webhooks/verify'
+import { parseWebhook, WebhookError, type ParsedTestEvent } from 'good-webhooks/verify'
 import { events } from './events.ts'
 import { receiverSecret, type ReceiverName } from './receivers.ts'
 
 const rejections = new Set(['SIGNATURE_INVALID', 'SIGNATURE_EXPIRED', 'PAYLOAD_INVALID'])
-type ParsedEvent = Awaited<ReturnType<typeof parseWebhook<typeof events>>>
+type ParsedEvent = Exclude<Awaited<ReturnType<typeof parseWebhook<typeof events>>>, ParsedTestEvent>
 
 /**
  * Verify a request for one of the Playground's receivers, then let `respond` decide the answer.
  * Every receiver verifies first, so its failures are deliberate, never signature errors.
+ * Test events are acknowledged here, so receivers only see Playground events.
  */
 export async function receive(
   name: ReceiverName,
@@ -18,7 +19,7 @@ export async function receive(
     return new Response('Webhook body is too large', { status: 413 })
   const secret = await receiverSecret(name)
   if (!secret) return new Response('This receiver is not set up', { status: 503 })
-  let event: ParsedEvent
+  let event: ParsedEvent | ParsedTestEvent
   try {
     event = await parseWebhook({
       body: new Uint8Array(await request.arrayBuffer()),
@@ -31,5 +32,6 @@ export async function receive(
       return new Response('Invalid webhook', { status: 400 })
     throw error // 500: the worker retries.
   }
+  if (event.type === 'good-webhooks.test') return new Response(null, { status: 204 })
   return respond(event)
 }

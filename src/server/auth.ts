@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth'
-import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
+import { APIError } from 'better-auth/api'
 import { nextCookies } from 'better-auth/next-js'
-import { createBetterAuthManagement, goodWebhooks } from 'good-webhooks/better-auth'
+import { goodWebhooks } from 'good-webhooks/better-auth'
 import { eventTypes } from '../lib/event-types.ts'
 import { pool } from './db.ts'
 import { env } from './env.ts'
@@ -9,7 +9,7 @@ import { MAX_ENDPOINTS_PER_USER } from './limits.ts'
 
 function createAuth() {
   const config = env()
-  const instance = betterAuth({
+  return betterAuth({
     database: pool(),
     baseURL: config.baseUrl,
     secret: config.authSecret,
@@ -36,26 +36,16 @@ function createAuth() {
         },
       },
     },
-    hooks: {
-      // The plugin has no endpoint cap option, so the Playground enforces its own.
-      before: createAuthMiddleware(async (ctx): Promise<void> => {
-        if (ctx.path !== '/good-webhooks/create') return
-        const session = await getSessionFromCtx(ctx)
-        if (!session) return // The route itself answers 401.
-        const management = await createBetterAuthManagement(instance)
-        const endpoints = await management.list({ type: 'user', id: session.user.id })
-        if (endpoints.length >= MAX_ENDPOINTS_PER_USER)
-          throw new APIError('FORBIDDEN', {
-            message: `The Playground allows ${MAX_ENDPOINTS_PER_USER} endpoints per account.`,
-          })
-      }),
-    },
     plugins: [
-      goodWebhooks({ eventTypes, allowLocalhost: config.allowLocalhost }),
+      goodWebhooks({
+        eventTypes,
+        allowLocalhost: config.allowLocalhost,
+        // Accounts get a few endpoints; the application scope holds the canary and chaos receivers.
+        maxEndpoints: (scope) => (scope?.type === 'user' ? MAX_ENDPOINTS_PER_USER : 1000),
+      }),
       nextCookies(), // Must stay last.
     ],
   })
-  return instance
 }
 
 async function isBlocked(userId: string): Promise<boolean> {

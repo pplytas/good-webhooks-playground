@@ -83,6 +83,7 @@ async function Endpoint({ params, searchParams }: PageProps<'/endpoints/[id]'>) 
             <TableHeader>
               <TableRow>
                 <TableHead>Created</TableHead>
+                <TableHead>Event</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Attempts</TableHead>
                 <TableHead>Last result</TableHead>
@@ -102,6 +103,7 @@ async function Endpoint({ params, searchParams }: PageProps<'/endpoints/[id]'>) 
                       <span className="ml-2 text-sm text-muted-foreground">replay</span>
                     )}
                   </TableCell>
+                  <TableCell className="font-mono text-sm">{item.eventType}</TableCell>
                   <TableCell>
                     <DeliveryStatusBadge status={item.status} />
                   </TableCell>

@@ -16,7 +16,7 @@ test('an account can have at most 3 endpoints', async () => {
       body: { url: `https://receiver.example/${n}`, eventTypes: ['ping.requested'] },
     })
   for (const n of [1, 2, 3]) await create(n)
-  await expect(create(4)).rejects.toMatchObject({ status: 'FORBIDDEN' })
+  await expect(create(4)).rejects.toMatchObject({ status: 'CONFLICT' })
 
   // Deleting one frees a slot.
   const [first] = await auth().api.listWebhookEndpoints({ headers, body: {} })
