@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authClient } from '@/lib/auth-client'
 import { eventTypes, type EventType } from '@/lib/event-types'
+import { MAX_ENDPOINTS_PER_USER } from '@/server/limits'
 
 export function CreateEndpointForm({ disabled }: { disabled: boolean }) {
   const router = useRouter()
@@ -29,7 +30,12 @@ export function CreateEndpointForm({ disabled }: { disabled: boolean }) {
       ...(description ? { description } : {}),
     })
     setPending(false)
-    if (failure) return setError(failure.message ?? 'The endpoint could not be created.')
+    if (failure)
+      return setError(
+        failure.code === 'ENDPOINT_LIMIT'
+          ? `The Playground allows ${MAX_ENDPOINTS_PER_USER} endpoints per account. Delete one to add another.`
+          : (failure.message ?? 'The endpoint could not be created.'),
+      )
     setSecret(data.secret)
     router.refresh()
   }
