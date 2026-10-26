@@ -34,6 +34,33 @@ test('replaying an endpoint with no failed deliveries replays nothing', async ()
   })
 })
 
+test('failed deliveries are replayed once, then skipped while the replay is pending', async () => {
+  const { pool } = await import('../src/server/db.ts')
+  const { requestPing } = await import('../src/server/pings.ts')
+  const { replayFailedSince } = await import('../src/server/replay.ts')
+  const { user, endpoint } = await createEndpoint()
+  expect(await requestPing(user.id)).toEqual({ limited: false, deliveryCount: 1 })
+  // No worker runs in tests, so mark the delivery failed directly.
+  const { rowCount } = await pool().query(
+    "UPDATE webhook_deliveries SET status = 'failed' WHERE endpoint_id = $1",
+    [endpoint.id],
+  )
+  expect(rowCount).toBe(1)
+  const since = new Date(Date.now() - 60_000).toISOString()
+  expect(await replayFailedSince(user.id, endpoint.id, since)).toEqual({
+    ok: true,
+    message: 'Replayed 1 failed delivery.',
+    replayed: 1,
+    skipped: 0,
+  })
+  expect(await replayFailedSince(user.id, endpoint.id, since)).toEqual({
+    ok: true,
+    message: 'Replayed 0 failed deliveries, skipped 1.',
+    replayed: 0,
+    skipped: 1,
+  })
+})
+
 test('a paused endpoint must be resumed first', async () => {
   const { auth } = await import('../src/server/auth.ts')
   const { replayFailedSince } = await import('../src/server/replay.ts')
