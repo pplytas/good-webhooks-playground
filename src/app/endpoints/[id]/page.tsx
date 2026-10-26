@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { EndpointActions } from '@/components/endpoint-actions'
+import { ReplayFailedForm } from '@/components/replay-failed-form'
 import { DeliveryStatusBadge, EndpointStatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -72,6 +73,7 @@ async function Endpoint({ params, searchParams }: PageProps<'/endpoints/[id]'>) 
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Deliveries</h2>
+        {endpoint.status === 'active' && <ReplayFailedForm endpointId={endpoint.id} />}
         {page.items.length === 0 ? (
           <p className="text-muted-foreground">
             {cursor

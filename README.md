@@ -8,7 +8,7 @@ It is also how we dogfood the library: it installs the published npm package lik
 
 | Process            | What it does                                                                                                                                                                                                                  |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `web` (Next.js 16) | GitHub sign-in through Better Auth, endpoint management through the `goodWebhooks` plugin, pings, delivery history and replay, `/status`, and the Playground's own receivers                                                  |
+| `web` (Next.js 16) | GitHub sign-in through Better Auth, endpoint management through the `goodWebhooks` plugin, pings, delivery history, replay and bulk replay, `/status`, and the Playground's own receivers                                     |
 | `worker` (Node.js) | Sends deliveries, publishes `clock.ticked` every 5 minutes to each user with a subscribed endpoint and to the Playground's receivers, records liveness, prunes history hourly, and resumes paused chaos receivers after a day |
 | PostgreSQL         | Better Auth tables, good-webhooks delivery tables, and the Playground's own tables                                                                                                                                            |
 

@@ -5,6 +5,7 @@ import { refresh } from 'next/cache'
 import { delivery } from '@/server/delivery'
 import { MAX_PINGS_PER_HOUR } from '@/server/limits'
 import { requestPing } from '@/server/pings'
+import { replayFailedSince as replayFailed } from '@/server/replay'
 import { getSession, userScope } from '@/server/session'
 
 export interface ActionState {
@@ -40,4 +41,18 @@ export async function replayDelivery(deliveryId: string): Promise<ActionState> {
   }
   refresh()
   return { ok: true, message: 'Replay queued.' }
+}
+
+export type ReplayFailedState = ActionState & { replayed?: number; skipped?: number }
+
+/** Bulk replay the failed deliveries to one of the signed-in user's endpoints since a time. */
+export async function replayFailedSince(
+  endpointId: string,
+  sinceIso: string,
+): Promise<ReplayFailedState> {
+  const session = await getSession()
+  if (!session) return { message: 'Sign in to replay deliveries.' }
+  const result = await replayFailed(session.user.id, endpointId, sinceIso)
+  if (result.replayed > 0) refresh()
+  return result
 }
