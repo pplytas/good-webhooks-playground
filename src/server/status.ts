@@ -116,7 +116,7 @@ export async function readReceivers(): Promise<ReceiverStatus[]> {
   ])
   return Promise.all(
     list.map(async ({ name, endpointId }) => {
-      const endpoint = await management.get(null, endpointId)
+      const endpoint = await management.get(receivers[name].scope, endpointId)
       const failure = errors.rows.find((row) => row.endpoint_id === endpointId)
       return {
         name,

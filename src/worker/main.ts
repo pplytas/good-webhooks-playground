@@ -46,6 +46,12 @@ async function prune(delivery: Awaited<ReturnType<typeof createPlaygroundDeliver
     "DELETE FROM playground_canary_receipt WHERE received_at < now() - interval '7 days'",
   )
   await database.query("DELETE FROM playground_ping WHERE created_at < now() - interval '1 day'")
+  await database.query(
+    "DELETE FROM playground_demo_receipt WHERE received_at < now() - interval '7 days'",
+  )
+  await database.query(
+    "DELETE FROM playground_demo_request WHERE created_at < now() - interval '1 day'",
+  )
   await database.query("DELETE FROM playground_worker WHERE seen_at < now() - interval '1 day'")
   log('playground.pruned', { events: deleted })
   const resumed = await resumePausedReceivers()

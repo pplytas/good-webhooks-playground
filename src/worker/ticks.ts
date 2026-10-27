@@ -2,6 +2,7 @@ import type { EndpointSource } from 'good-webhooks/delivery'
 import type { Pool } from 'pg'
 import type { PlaygroundDelivery } from '../server/delivery.ts'
 import { TICK_INTERVAL_SECONDS } from '../server/events.ts'
+import { demoScope } from '../server/receivers.ts'
 
 /** The start of the tick window containing `now`. */
 export function tickWindow(now: Date): Date {
@@ -10,7 +11,8 @@ export function tickWindow(now: Date): Date {
 }
 
 /**
- * Publish one tick to the canary (application scope) and to every user with a subscribed endpoint.
+ * Publish one tick to the canary (application scope), to the demo receiver (demo scope), and to
+ * every user with a subscribed endpoint.
  * The idempotency key makes repeats for the same window harmless, across restarts and replicas.
  */
 export async function publishTicks(
@@ -23,8 +25,9 @@ export async function publishTicks(
     data: { tickedAt, intervalSeconds: TICK_INTERVAL_SECONDS } as const,
     idempotencyKey: `tick:${tickedAt}`,
   }
-  let scopes = 1
+  let scopes = 2
   let deliveries = (await input.delivery.publish(event)).deliveryCount
+  deliveries += (await input.delivery.forScope(demoScope).publish(event)).deliveryCount
   const { rows } = await input.database.query<{ id: string }>('SELECT id FROM "user" ORDER BY id')
   for (const { id } of rows) {
     const scope = { type: 'user', id }

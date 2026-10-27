@@ -20,6 +20,10 @@ _Avoid_: Health check, monitor
 One of the Playground's own application-scope endpoints that fails on purpose, sometimes or always, so retries, timeouts, Retry-After, and automatic pauses keep happening without visitors. It verifies every request first.
 _Avoid_: Test endpoint, broken endpoint
 
+**Demo receiver**:
+The Playground's public endpoint in the `demo` scope. Its signing secret is published on purpose on `/demo`, so anyone can verify its requests. It keeps a request only for an event the demo scope published, so forged requests never appear on the page.
+_Avoid_: Sandbox, test endpoint
+
 **Owner**:
 A signed-in GitHub user and the personal scope their endpoints belong to.
 _Avoid_: Customer, tenant
