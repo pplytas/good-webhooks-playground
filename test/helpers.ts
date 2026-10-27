@@ -64,3 +64,36 @@ export async function createGithubUser(githubId = String(Math.floor(Math.random(
   const cookie = `better-auth.session_token=${encodeURIComponent(`${session.token}.${signature}`)}`
   return { user, githubId, headers: new Headers({ cookie, origin: 'http://localhost:3000' }) }
 }
+
+/** Sign like a Standard Webhooks sender: HMAC-SHA256 over "id.timestamp.body". */
+export function signedRequest(
+  url: string,
+  secret: string,
+  id: string = randomUUID(),
+  event: { type: string; data: unknown } = {
+    type: 'clock.ticked',
+    data: { tickedAt: '2026-10-17T10:00:00.000Z', intervalSeconds: 300 },
+  },
+  extraHeaders: Record<string, string> = {},
+) {
+  const body = JSON.stringify({
+    id,
+    type: event.type,
+    occurredAt: new Date().toISOString(),
+    data: event.data,
+  })
+  const timestamp = Math.floor(Date.now() / 1000)
+  const key = Buffer.from(secret.replace(/^whsec_/, ''), 'base64')
+  const signature = createHmac('sha256', key).update(`${id}.${timestamp}.${body}`).digest('base64')
+  return new Request(url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'webhook-id': id,
+      'webhook-timestamp': String(timestamp),
+      'webhook-signature': `v1,${signature}`,
+      ...extraHeaders,
+    },
+    body,
+  })
+}

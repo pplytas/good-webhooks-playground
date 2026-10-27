@@ -8,31 +8,53 @@ import { env } from './env.ts'
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /**
- * Endpoints the Playground answers itself, in application scope. The canary always succeeds;
- * the chaos receivers fail on purpose so retries, timeouts, Retry-After, and pauses keep happening.
+ * The demo receiver's named scope. Better Auth has no scope policy for it, so signed-in users
+ * cannot reach it through the plugin's routes; only the Playground's own code reads it.
+ */
+export const demoScope = { type: 'demo', id: 'public' } as const
+
+/**
+ * Endpoints the Playground answers itself. The canary always succeeds; the chaos receivers fail
+ * on purpose so retries, timeouts, Retry-After, and pauses keep happening. These live in
+ * application scope. The demo receiver lives in the demo scope, and its secret is public.
  */
 export const receivers = {
-  canary: { path: '/api/canary', description: 'Always succeeds', resumeAfterMs: null },
+  canary: { path: '/api/canary', description: 'Always succeeds', resumeAfterMs: null, scope: null },
   flaky: {
     path: '/api/receivers/flaky',
     description: 'Answers 500 30% of the time',
     resumeAfterMs: null,
+    scope: null,
   },
   slow: {
     path: '/api/receivers/slow',
     description: 'Outlasts the 10 s timeout 20% of the time',
     resumeAfterMs: null,
+    scope: null,
   },
   busy: {
     path: '/api/receivers/busy',
     description: 'Answers 429 with Retry-After: 60 25% of the time',
     resumeAfterMs: null,
+    scope: null,
   },
-  gone: { path: '/api/receivers/gone', description: 'Always answers 410', resumeAfterMs: DAY_MS },
+  gone: {
+    path: '/api/receivers/gone',
+    description: 'Always answers 410',
+    resumeAfterMs: DAY_MS,
+    scope: null,
+  },
   failing: {
     path: '/api/receivers/failing',
     description: 'Always answers 500',
     resumeAfterMs: DAY_MS,
+    scope: null,
+  },
+  demo: {
+    path: '/api/demo',
+    description: 'Public demo receiver',
+    resumeAfterMs: null,
+    scope: demoScope,
   },
 } as const
 export type ReceiverName = keyof typeof receivers
@@ -48,11 +70,12 @@ export async function ensureReceivers(): Promise<ReceiverName[]> {
   for (const name of receiverNames) {
     if (existing.has(name)) continue
     const providers = await management()
-    const { endpoint, secret } = await providers.create(null, {
+    const { scope } = receivers[name]
+    const { endpoint, secret } = await providers.create(scope, {
       url: new URL(receivers[name].path, env().baseUrl).href,
       description: `Playground ${name} receiver`,
-      // The canary hears everything; chaos receivers only need the steady ticks.
-      eventTypes: name === 'canary' ? [...eventTypes] : ['clock.ticked'],
+      // The canary and the demo hear everything; chaos receivers only need the steady ticks.
+      eventTypes: name === 'canary' || name === 'demo' ? [...eventTypes] : ['clock.ticked'],
     })
     const encrypted = await symmetricEncrypt({ key: env().authSecret, data: secret })
     const inserted = await pool().query(
@@ -61,7 +84,7 @@ export async function ensureReceivers(): Promise<ReceiverName[]> {
       [name, endpoint.id, encrypted],
     )
     // A concurrent setup won the race. Retire the duplicate endpoint.
-    if (!inserted.rowCount) await providers.remove(null, endpoint.id)
+    if (!inserted.rowCount) await providers.remove(scope, endpoint.id)
     else created.push(name)
   }
   return created
@@ -93,9 +116,10 @@ export async function resumePausedReceivers(now = Date.now()): Promise<ReceiverN
   for (const { name, endpointId } of await receiverEndpoints()) {
     const after = receivers[name].resumeAfterMs
     if (after === null) continue
-    const endpoint = await providers.get(null, endpointId)
+    const { scope } = receivers[name]
+    const endpoint = await providers.get(scope, endpointId)
     if (endpoint.status !== 'paused' || now - endpoint.updatedAt.getTime() < after) continue
-    await providers.resume(null, endpointId)
+    await providers.resume(scope, endpointId)
     resumed.push(name)
   }
   return resumed

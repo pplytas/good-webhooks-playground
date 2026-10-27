@@ -9,10 +9,11 @@ afterAll(() => teardown())
 
 test('readStatus reports application-scope stats with every status and outcome', async () => {
   const { delivery } = await import('../src/server/delivery.ts')
-  const { ensureReceivers, receiverNames } = await import('../src/server/receivers.ts')
+  const { ensureReceivers, receiverNames, receivers } = await import('../src/server/receivers.ts')
   const { readStatus } = await import('../src/server/status.ts')
   await ensureReceivers()
-  // Every receiver subscribes to clock.ticked, so one tick makes one pending delivery each.
+  // Every application-scope receiver subscribes to clock.ticked, so one tick makes one pending
+  // delivery each. The demo receiver lives in its own scope.
   await (
     await delivery()
   ).publish({
@@ -22,7 +23,7 @@ test('readStatus reports application-scope stats with every status and outcome',
 
   const { stats } = await readStatus()
   expect(stats.deliveries).toEqual({
-    pending: receiverNames.length,
+    pending: receiverNames.filter((name) => receivers[name].scope === null).length,
     in_flight: 0,
     succeeded: 0,
     failed: 0,

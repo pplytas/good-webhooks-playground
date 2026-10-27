@@ -1,6 +1,6 @@
-import { createHmac, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, expect, test } from 'vitest'
-import { useTestDatabase } from './helpers.ts'
+import { signedRequest, useTestDatabase } from './helpers.ts'
 
 let teardown: () => Promise<void>
 beforeAll(async () => {
@@ -8,36 +8,6 @@ beforeAll(async () => {
 })
 afterAll(() => teardown())
 
-/** Sign like a Standard Webhooks sender: HMAC-SHA256 over "id.timestamp.body". */
-function signedRequest(
-  url: string,
-  secret: string,
-  id = randomUUID(),
-  event: { type: string; data: unknown } = {
-    type: 'clock.ticked',
-    data: { tickedAt: '2026-10-17T10:00:00.000Z', intervalSeconds: 300 },
-  },
-) {
-  const body = JSON.stringify({
-    id,
-    type: event.type,
-    occurredAt: new Date().toISOString(),
-    data: event.data,
-  })
-  const timestamp = Math.floor(Date.now() / 1000)
-  const key = Buffer.from(secret.replace(/^whsec_/, ''), 'base64')
-  const signature = createHmac('sha256', key).update(`${id}.${timestamp}.${body}`).digest('base64')
-  return new Request(url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'webhook-id': id,
-      'webhook-timestamp': String(timestamp),
-      'webhook-signature': `v1,${signature}`,
-    },
-    body,
-  })
-}
 const forgedSecret = `whsec_${Buffer.alloc(32, 1).toString('base64')}`
 
 test('setup creates each receiver endpoint once', async () => {

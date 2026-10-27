@@ -35,6 +35,13 @@ export default function Home() {
             <CallToAction />
           </Suspense>
         </div>
+        <p className="text-muted-foreground">
+          No account?{' '}
+          <Link className="underline underline-offset-4" href="/demo">
+            Watch live signed deliveries on the demo page
+          </Link>
+          .
+        </p>
       </section>
 
       <section className="grid gap-8 sm:grid-cols-2">

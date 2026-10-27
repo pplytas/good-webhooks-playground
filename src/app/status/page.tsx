@@ -86,9 +86,9 @@ async function Receivers() {
     <section className="flex flex-col gap-3">
       <h2 className="text-xl font-semibold">Playground receivers</h2>
       <p className="max-w-2xl text-sm text-muted-foreground">
-        Endpoints the Playground answers itself. The canary always succeeds; the others fail on
-        purpose so retries, timeouts, Retry-After, and automatic pauses keep happening. Paused gone
-        and failing receivers are resumed after a day.
+        Endpoints the Playground answers itself. The canary and the demo receiver always succeed;
+        the others fail on purpose so retries, timeouts, Retry-After, and automatic pauses keep
+        happening. Paused gone and failing receivers are resumed after a day.
       </p>
       <Table>
         <TableHeader>

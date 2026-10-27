@@ -38,7 +38,7 @@ test('a tick reaches each subscribed user once per window, and skips users witho
   }
   const window = new Date('2026-10-17T10:00:00.000Z')
 
-  // Application scope (no receivers in this database) plus the one subscribed user.
+  // Application scope, plus the one subscribed user. The demo endpoint does not exist here.
   expect(await publishTicks(input, window)).toEqual({ scopes: 2, deliveries: 1 })
   // The same window again: the idempotency key accepts it as a duplicate.
   expect(await publishTicks(input, window)).toEqual({ scopes: 2, deliveries: 1 })
