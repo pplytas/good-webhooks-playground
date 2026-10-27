@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { authClient } from '@/lib/auth-client'
 import { eventTypes, type EventType } from '@/lib/event-types'
+import { parseHeaderLines } from '@/lib/headers'
 import { MAX_ENDPOINTS_PER_USER } from '@/server/limits'
 
 export function CreateEndpointForm({ disabled }: { disabled: boolean }) {
@@ -21,13 +23,17 @@ export function CreateEndpointForm({ disabled }: { disabled: boolean }) {
   if (secret) return <SecretReveal secret={secret} onDone={() => setSecret(null)} />
 
   async function create(form: FormData) {
-    setPending(true)
     setError(null)
     const description = String(form.get('description') ?? '').trim()
+    const parsed = parseHeaderLines(String(form.get('headers') ?? ''))
+    if ('error' in parsed) return setError(parsed.error)
+    const { headers } = parsed
+    setPending(true)
     const { data, error: failure } = await authClient.goodWebhooks.create({
       url: String(form.get('url') ?? '').trim(),
       eventTypes: selected,
       ...(description ? { description } : {}),
+      ...(Object.keys(headers).length > 0 ? { headers } : {}),
     })
     setPending(false)
     if (failure)
@@ -41,7 +47,14 @@ export function CreateEndpointForm({ disabled }: { disabled: boolean }) {
   }
 
   return (
-    <form action={create} className="flex flex-col gap-4">
+    // onSubmit rather than action: a form action resets the fields, so an error would clear them.
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        void create(new FormData(event.currentTarget))
+      }}
+      className="flex flex-col gap-4"
+    >
       <div className="flex flex-col gap-2">
         <Label htmlFor="url">HTTPS URL</Label>
         <Input
@@ -56,6 +69,22 @@ export function CreateEndpointForm({ disabled }: { disabled: boolean }) {
       <div className="flex flex-col gap-2">
         <Label htmlFor="description">Description (optional)</Label>
         <Input id="description" name="description" maxLength={200} disabled={disabled} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="headers">Headers (optional)</Label>
+        <Textarea
+          id="headers"
+          name="headers"
+          rows={2}
+          placeholder="x-api-key: your-gateway-key"
+          aria-describedby="headers-hint"
+          className="font-mono"
+          disabled={disabled}
+        />
+        <p id="headers-hint" className="text-sm text-muted-foreground">
+          One per line, as <code className="font-mono">Name: value</code>. Sent on every request and
+          test event.
+        </p>
       </div>
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium">Events</legend>

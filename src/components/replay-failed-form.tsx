@@ -56,7 +56,7 @@ export function ReplayFailedForm({ endpointId }: { endpointId: string }) {
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Times are in your time zone. Deliveries are kept for 7 days.
+        The time is in your time zone. The table shows UTC. Deliveries are kept for 7 days.
       </p>
       {state.message && (
         <p className={state.ok ? 'text-sm text-muted-foreground' : 'text-sm text-destructive'}>

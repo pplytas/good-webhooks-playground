@@ -61,6 +61,16 @@ async function Endpoint({ params, searchParams }: PageProps<'/endpoints/[id]'>) 
           )}
           <dt className="text-muted-foreground">Events</dt>
           <dd className="font-mono">{endpoint.eventTypes.join(', ')}</dd>
+          {Object.keys(endpoint.headers).length > 0 && (
+            <>
+              <dt className="text-muted-foreground">Headers</dt>
+              <dd className="font-mono break-all whitespace-pre-line">
+                {Object.entries(endpoint.headers)
+                  .map(([name, value]) => `${name}: ${value}`)
+                  .join('\n')}
+              </dd>
+            </>
+          )}
           <dt className="text-muted-foreground">Endpoint ID</dt>
           <dd className="font-mono">{endpoint.id}</dd>
           <dt className="text-muted-foreground">Created</dt>
