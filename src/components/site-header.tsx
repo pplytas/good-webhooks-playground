@@ -28,6 +28,9 @@ export function SiteHeader() {
           <span>Good Webhooks Playground</span>
         </Link>
         <nav className="flex items-center gap-5 text-sm text-muted-foreground">
+          <Link href="/events" className="hover:text-foreground">
+            Events
+          </Link>
           <Link href="/status" className="hover:text-foreground">
             Status
           </Link>

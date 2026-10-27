@@ -2,4 +2,4 @@ allowBuilds:
   sharp: false
   unrs-resolver: false
 minimumReleaseAgeExclude:
-  - good-webhooks@0.5.0
+  - good-webhooks@0.6.0

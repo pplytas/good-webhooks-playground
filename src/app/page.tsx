@@ -23,7 +23,12 @@ export default function Home() {
         <p className="text-lg text-muted-foreground">
           Sign in with GitHub, add an HTTPS endpoint, and receive signed Standard Webhooks from a
           running good-webhooks worker: <code className="font-mono">clock.ticked</code> every 5
-          minutes, and <code className="font-mono">ping.requested</code> whenever you ask.
+          minutes, and <code className="font-mono">ping.requested</code> whenever you ask. Their
+          payload schemas are on the{' '}
+          <Link className="underline underline-offset-4" href="/events">
+            events page
+          </Link>
+          .
         </p>
         <div>
           <Suspense fallback={<div className="h-10" />}>

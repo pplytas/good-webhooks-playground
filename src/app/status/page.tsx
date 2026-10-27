@@ -11,18 +11,25 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatAge, formatTime } from '@/lib/format'
+import { formatAge, formatDuration, formatTime } from '@/lib/format'
 import { readReceivers, readStatus } from '@/server/status'
 
 export const metadata: Metadata = { title: 'Status' }
 
 const deliveryOrder = ['succeeded', 'failed', 'pending', 'in_flight', 'cancelled'] as const
+const outcomes = [
+  ['succeeded', 'succeeded'],
+  ['retry', 'retried'],
+  ['failed', 'failed'],
+  ['abandoned', 'abandoned'],
+  ['started', 'in progress'],
+] as const
 
 async function Status() {
   await connection()
   const status = await readStatus()
   const now = status.checkedAt.getTime()
-  const delivered = deliveryOrder.map((name) => [name, status.deliveries24h[name] ?? 0] as const)
+  const { deliveries, oldestPendingAgeMs, attemptsLastHour } = status.stats
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-3">
@@ -46,14 +53,23 @@ async function Status() {
         </dd>
       </dl>
       <section className="flex flex-col gap-3">
-        <h2 className="text-xl font-semibold">Deliveries in the last 24 hours</h2>
+        <h2 className="text-xl font-semibold">Receiver deliveries</h2>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Deliveries to the Playground&apos;s own receivers (application scope), kept for 7 days.
+        </p>
         <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-[max-content_1fr]">
-          {delivered.map(([name, count]) => (
+          {deliveryOrder.map((name) => (
             <div key={name} className="contents">
               <dt className="text-muted-foreground">{name.replace('_', ' ')}</dt>
-              <dd>{count}</dd>
+              <dd>{deliveries[name]}</dd>
             </div>
           ))}
+          <dt className="text-muted-foreground">Oldest pending</dt>
+          <dd>{oldestPendingAgeMs === null ? 'none' : formatDuration(oldestPendingAgeMs)}</dd>
+          <dt className="text-muted-foreground">Attempts in the last hour</dt>
+          <dd>
+            {outcomes.map(([name, label]) => `${attemptsLastHour[name]} ${label}`).join(', ')}
+          </dd>
         </dl>
       </section>
     </div>
