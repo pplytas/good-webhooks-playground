@@ -1,14 +1,10 @@
-import { createHash } from 'node:crypto'
-import type { Delivery, DeliveryStats, Endpoint } from 'good-webhooks'
-import { createBetterAuthManagement } from 'good-webhooks/better-auth'
-import { auth } from './auth.ts'
+import { createHmac } from 'node:crypto'
+import type { Delivery, DeliveryStats } from 'good-webhooks'
 import { pool } from './db.ts'
 import { delivery } from './delivery.ts'
 import { env } from './env.ts'
 import { MAX_DEMO_EVENTS_PER_HOUR, MAX_DEMO_EVENTS_PER_IP_PER_10_MIN } from './limits.ts'
-import { demoScope, receiverSecret } from './receivers.ts'
-
-export { demoScope }
+import { demoScope, receivers, receiverSecret } from './receivers.ts'
 
 /** The only request headers a receipt keeps. Everything else the request carried is dropped. */
 export const receiptHeaders = [
@@ -19,6 +15,9 @@ export const receiptHeaders = [
   'user-agent',
 ] as const
 export const MAX_RECEIPT_BODY_BYTES = 4 * 1024
+/** Each kept header value is cut here, so a forged request cannot fill the page. */
+export const MAX_RECEIPT_HEADER_CHARS = 256
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export interface DemoReceipt {
   eventId: string
@@ -43,33 +42,34 @@ async function demoEndpointId(): Promise<string | null> {
 export async function recordDemoReceipt(
   eventId: string,
   request: { headers: Headers; body: Uint8Array },
-): Promise<boolean> {
-  if (request.body.byteLength > MAX_RECEIPT_BODY_BYTES) return false
+): Promise<void> {
+  // Playground event IDs are UUIDs. Anything else is a forgery, and would make list() throw.
+  if (!uuid.test(eventId) || request.body.byteLength > MAX_RECEIPT_BODY_BYTES) return
   const endpointId = await demoEndpointId()
-  if (!endpointId) return false
+  if (!endpointId) return
   const { items } = await (
     await delivery()
   )
     .forScope(demoScope)
     .deliveries.list({ endpointId, eventId, limit: 1 })
-  const match = items.find((item) => item.endpointId === endpointId)
-  if (!match) return false
+  const match = items[0]
+  if (!match) return
   const headers = Object.fromEntries(
     receiptHeaders.flatMap((name) => {
       const value = request.headers.get(name)
-      return value === null ? [] : [[name, value]]
+      return value === null ? [] : [[name, value.slice(0, MAX_RECEIPT_HEADER_CHARS)]]
     }),
   )
-  const { rowCount } = await pool().query(
+  await pool().query(
     `INSERT INTO playground_demo_receipt (event_id, delivery_id, headers, body)
      VALUES ($1, $2, $3, $4) ON CONFLICT (event_id) DO NOTHING`,
     [eventId, match.id, JSON.stringify(headers), new TextDecoder().decode(request.body)],
   )
-  return (rowCount ?? 0) > 0
 }
 
 export interface DemoView {
-  endpoint: Pick<Endpoint, 'id' | 'url' | 'createdAt' | 'status'>
+  endpointId: string
+  url: string
   secret: string
   deliveries: Delivery[]
   stats: DeliveryStats
@@ -81,8 +81,7 @@ async function loadDemo(): Promise<DemoView | null> {
   const [endpointId, secret] = await Promise.all([demoEndpointId(), receiverSecret('demo')])
   if (!endpointId || !secret) return null
   const scoped = (await delivery()).forScope(demoScope)
-  const [endpoint, page, stats] = await Promise.all([
-    createBetterAuthManagement(auth()).then((management) => management.get(demoScope, endpointId)),
+  const [page, stats] = await Promise.all([
     scoped.deliveries.list({ endpointId, limit: 10 }),
     scoped.deliveries.stats(),
   ])
@@ -98,12 +97,9 @@ async function loadDemo(): Promise<DemoView | null> {
     [page.items.map((item) => item.eventId)],
   )
   return {
-    endpoint: {
-      id: endpoint.id,
-      url: endpoint.url,
-      createdAt: endpoint.createdAt,
-      status: endpoint.status,
-    },
+    endpointId,
+    // The same URL setup registered, so the page needs no management read.
+    url: new URL(receivers.demo.path, env().baseUrl).href,
     secret,
     deliveries: page.items,
     stats,
@@ -141,9 +137,9 @@ export function readDemo(now = Date.now()): Promise<DemoView | null> {
   return promise
 }
 
-/** Hash a visitor's IP with the auth secret, so the raw address is never stored. */
+/** Key a visitor's IP with the auth secret, so the raw address is never stored. */
 export function demoIpHash(ip: string): string {
-  return createHash('sha256').update(`${env().authSecret}:${ip}`).digest('hex')
+  return createHmac('sha256', env().authSecret).update(ip).digest('hex')
 }
 
 export type DemoEventResult =

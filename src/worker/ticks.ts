@@ -25,9 +25,12 @@ export async function publishTicks(
     data: { tickedAt, intervalSeconds: TICK_INTERVAL_SECONDS } as const,
     idempotencyKey: `tick:${tickedAt}`,
   }
-  let scopes = 2
+  let scopes = 1
   let deliveries = (await input.delivery.publish(event)).deliveryCount
-  deliveries += (await input.delivery.forScope(demoScope).publish(event)).deliveryCount
+  // The demo scope counts once its endpoint exists, like a user with a subscribed endpoint.
+  const demo = (await input.delivery.forScope(demoScope).publish(event)).deliveryCount
+  if (demo > 0) scopes += 1
+  deliveries += demo
   const { rows } = await input.database.query<{ id: string }>('SELECT id FROM "user" ORDER BY id')
   for (const { id } of rows) {
     const scope = { type: 'user', id }

@@ -116,7 +116,7 @@ async function Demo() {
           <>
             <p className="max-w-2xl text-sm text-muted-foreground">
               Received {formatTime(latest.receivedAt)} at{' '}
-              <span className="font-mono break-all">{demo.endpoint.url}</span>.
+              <span className="font-mono break-all">{demo.url}</span>.
             </p>
             <div className="flex flex-col gap-2">
               <h3 className="font-medium">Headers</h3>

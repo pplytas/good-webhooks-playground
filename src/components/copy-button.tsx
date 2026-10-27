@@ -10,8 +10,13 @@ export function CopyButton({ text }: { text: string }) {
       size="sm"
       variant="outline"
       onClick={async () => {
-        await navigator.clipboard.writeText(text)
-        setCopied(true)
+        // The clipboard is unavailable on insecure origins or when the browser denies it.
+        try {
+          await navigator.clipboard.writeText(text)
+          setCopied(true)
+        } catch {
+          setCopied(false)
+        }
       }}
     >
       {copied ? 'Copied' : 'Copy'}

@@ -38,10 +38,10 @@ test('a tick reaches each subscribed user once per window, and skips users witho
   }
   const window = new Date('2026-10-17T10:00:00.000Z')
 
-  // Application and demo scopes (no receivers in this database) plus the one subscribed user.
-  expect(await publishTicks(input, window)).toEqual({ scopes: 3, deliveries: 1 })
+  // Application scope, plus the one subscribed user. The demo endpoint does not exist here.
+  expect(await publishTicks(input, window)).toEqual({ scopes: 2, deliveries: 1 })
   // The same window again: the idempotency key accepts it as a duplicate.
-  expect(await publishTicks(input, window)).toEqual({ scopes: 3, deliveries: 1 })
+  expect(await publishTicks(input, window)).toEqual({ scopes: 2, deliveries: 1 })
   const { rows } = await pool().query<{ count: number }>(
     'SELECT count(*)::int AS count FROM webhook_deliveries',
   )

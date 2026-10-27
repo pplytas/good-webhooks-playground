@@ -21,7 +21,7 @@ async function demoEndpointId() {
 /** Publish ping.requested in the demo scope and return its event ID, read from delivery history. */
 async function publishDemoPing() {
   const { delivery } = await import('../src/server/delivery.ts')
-  const { demoScope } = await import('../src/server/demo.ts')
+  const { demoScope } = await import('../src/server/receivers.ts')
   const scoped = (await delivery()).forScope(demoScope)
   const requestedAt = new Date().toISOString()
   const { eventId } = await scoped.publish({ type: 'ping.requested', data: { requestedAt } })
@@ -44,7 +44,7 @@ async function receiptRows(eventId: string) {
 
 test('setup creates the demo endpoint in the demo scope, outside application scope', async () => {
   const { auth } = await import('../src/server/auth.ts')
-  const { demoScope } = await import('../src/server/demo.ts')
+  const { demoScope } = await import('../src/server/receivers.ts')
   const { receiverSecret } = await import('../src/server/receivers.ts')
   const { createBetterAuthManagement } = await import('good-webhooks/better-auth')
   const management = await createBetterAuthManagement(auth())
@@ -99,6 +99,9 @@ test('the demo receiver ignores unknown events and rejects bad signatures', asyn
   expect((await POST(signedRequest(url, secret, unknown))).status).toBe(204)
   expect(await receiptRows(unknown)).toEqual([])
 
+  // A valid signature over a non-UUID ID is a forgery; it must not reach list() and throw.
+  expect((await POST(signedRequest(url, secret, 'x'))).status).toBe(204)
+
   const { eventId } = await publishDemoPing()
   expect((await POST(signedRequest(url, forgedSecret, eventId))).status).toBe(400)
   expect(await receiptRows(eventId)).toEqual([])
@@ -125,7 +128,7 @@ test('readDemo reads only the demo scope and shares one read for 5 seconds', asy
   const demo = await readDemo(now)
   expect(demo).not.toBeNull()
   const endpointId = await demoEndpointId()
-  expect(demo!.endpoint.id).toBe(endpointId)
+  expect(demo!.endpointId).toBe(endpointId)
   expect(demo!.secret).toMatch(/^whsec_/)
   expect(demo!.deliveries.length).toBeGreaterThan(0)
   expect(demo!.deliveries.every((item) => item.endpointId === endpointId)).toBe(true)
