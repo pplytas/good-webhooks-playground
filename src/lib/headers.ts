@@ -5,7 +5,8 @@ export type ParsedHeaders = { headers: Record<string, string> } | { error: strin
  * library enforces reserved names, value characters, and size limits.
  */
 export function parseHeaderLines(text: string): ParsedHeaders {
-  const headers: Record<string, string> = {}
+  // A Map keeps a name such as __proto__ as data, which a plain object would drop.
+  const headers = new Map<string, string>()
   for (const [index, raw] of text.split('\n').entries()) {
     const line = raw.trim()
     if (!line) continue
@@ -14,8 +15,8 @@ export function parseHeaderLines(text: string): ParsedHeaders {
     const name = line.slice(0, colon).trim()
     if (!name) return { error: `Line ${index + 1} has no header name.` }
     // A record keeps one value per name, so a repeated line would be dropped silently.
-    if (Object.hasOwn(headers, name)) return { error: `Header ${name} appears twice.` }
-    headers[name] = line.slice(colon + 1).trim()
+    if (headers.has(name)) return { error: `Header ${name} appears twice.` }
+    headers.set(name, line.slice(colon + 1).trim())
   }
-  return { headers }
+  return { headers: Object.fromEntries(headers) }
 }
