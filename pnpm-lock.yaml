@@ -179,8 +179,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0
       good-webhooks:
-        specifier: 0.6.0
-        version: 0.6.0(better-auth@1.7.10(next@16.4.2(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@24.19.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.23.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.0.5(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))))
+        specifier: 0.7.0
+        version: 0.7.0(better-auth@1.7.10(next@16.4.2(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@24.19.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.23.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.0.5(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))))
       lucide-react:
         specifier: ^1.58.0
         version: 1.58.0(@types/react@19.3.0)(react@19.3.1)
@@ -486,6 +486,9 @@ packages:
 
   '@better-fetch/fetch@1.3.2':
     resolution: {integrity: sha512-Gs7n99b5tqUC6cQAPbV0uED3IraHB6xQbHLQ/C3l7ZFafHScOx9pQ+DYmP5blbLFShVWLqxNUlI9wi4xU/X+ow==}
+
+  '@better-fetch/fetch@1.3.3':
+    resolution: {integrity: sha512-U6SlDt/GUWtK2JAxS/NhdoYTEim+EL1G5byz2TUj83KjLZBUpYzb5SmX0aXaCnbGkAjFKnV/o/0+cyXMbEcqqg==}
 
   '@dotenvx/dotenvx@1.75.1':
     resolution: {integrity: sha512-/BITOC9dmS/edY2zQwZNicQ059O6RKabtQfyEafV0nGtfYRNHYy1DIPiYVcov40+tob9hfmBnbR963dS+EQ1DQ==}
@@ -1778,8 +1781,8 @@ packages:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
     engines: {node: '>= 6'}
 
-  good-webhooks@0.6.0:
-    resolution: {integrity: sha512-iNPB+KvILmqifXsiq0xlmgIbCXhoAvw9d3tQe2sz7UTxia0Oqay/EfAisB7UHeGXXY5UIsPxvPdP88+I7ZN0eA==}
+  good-webhooks@0.7.0:
+    resolution: {integrity: sha512-Sn3ocWAJTLlt1kC+v3Rf9+c73QOlMohlrxBY2wveR9iNyxK4/9K5PQQS3Lki0UtnOa9R8f8Ya28sScCuqY/kJA==}
     engines: {node: '>=24'}
     peerDependencies:
       better-auth: '>=1.7.7 <1.8.0 || >=1.8.0-beta.0 <1.9.0-0'
@@ -3168,6 +3171,8 @@ snapshots:
 
   '@better-fetch/fetch@1.3.2': {}
 
+  '@better-fetch/fetch@1.3.3': {}
+
   '@dotenvx/dotenvx@1.75.1':
     dependencies:
       '@dotenvx/primitives': 0.8.0
@@ -4182,9 +4187,9 @@ snapshots:
     dependencies:
       is-glob: 4.0.3
 
-  good-webhooks@0.6.0(better-auth@1.7.10(next@16.4.2(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@24.19.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.23.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.0.5(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)))):
+  good-webhooks@0.7.0(better-auth@1.7.10(next@16.4.2(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@24.19.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.23.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.0.5(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)))):
     dependencies:
-      '@better-fetch/fetch': 1.3.2
+      '@better-fetch/fetch': 1.3.3
       '@standard-schema/spec': 1.1.0
       ipaddr.js: 2.5.0
       zod: 4.6.7
